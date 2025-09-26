@@ -107,7 +107,7 @@ L’enviament dels missatges que simulin aquesta plataforma es pot fer directame
 }
 ```
 
-### 7. Persistencia
+### 7. Persistència
 Implementar una classe `Storage` per guardar i recuperar valors en memòria.  
 
 ### Ús esperat:
@@ -122,7 +122,7 @@ preparar un mecanisme que permeti desactivar els logs per quan es compila una ve
 ### Extra
 - Fer que el mòdul creï un Acces Point, per tal de que ens puguem connectar amb un mòbil per poder introduir el SSID i Password, a través d'un formulari.
 - Realitzar una conexió MQTT autenticada amb certificats. (Alguns del Brokers gratis ho permeten, ells mateixos ja generen els certificats).
-- Si Es perd conexió amb el Broker MQTT o es desconnecta de la xarxa, guardar les dades que s'haurien d'enviar cada 30 segons. Per quan es recoperi la conexió 
+- Si Es perd connexió amb el Broker MQTT o es desconnecta de la xarxa, guardar les dades que s'haurien d'enviar cada 30 segons. Per quan es recoperi la connexió 
   enviarles. (S'han d'enviar amb la data y hora corresponent a la seva generació.)
 - Fer que software treballi amb threads diferents. Per tal que en un thread gestioni els missatges rebuts per MQTT i l'altre la resta del programa.
 
@@ -130,7 +130,7 @@ preparar un mecanisme que permeti desactivar els logs per quan es compila una ve
 
 ## ✅ Criteris d’avaluació
 - Correcta connexió a WiFi i MQTT.
-- Sistema de reconnexió si es perd la conexió WIFI.
+- Sistema de reconnexió si es perd la connexió WIFI.
 - Serialització/deserialització de missatges en JSON.
 - Organització del codi (classes, modularitat).
 - Codi no bloquejant.
