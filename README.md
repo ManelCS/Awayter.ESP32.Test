@@ -120,9 +120,11 @@ L'aplicació ha d'imprimir per Serial els esdeveniments més importants per pode
 preparar un mecanisme que permeti desactivar els logs per quan es compila una versió per producció.
 
 ### Extra
+- Fer que el mòdul creï un Acces Point, per tal de que ens puguem connectar amb un mòbil per poder introduir el SSID i Password, a través d'un formulari.
 - Realitzar una conexió MQTT autenticada amb certificats. (Alguns del Brokers gratis ho permeten, ells mateixos ja generen els certificats).
 - Si Es perd conexió amb el Broker MQTT o es desconnecta de la xarxa, guardar les dades que s'haurien d'enviar cada 30 segons. Per quan es recoperi la conexió 
   enviarles. (S'han d'enviar amb la data y hora corresponent a la seva generació.)
+- Fer que software treballi amb threads diferents. Per tal que en un thread gestioni els missatges rebuts per MQTT i l'altre la resta del programa.
 
 ---
 
