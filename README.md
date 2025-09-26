@@ -138,8 +138,8 @@ preparar un mecanisme que permeti desactivar els logs per quan es compila una ve
 - Codi comentat i ben estructurat.
 
 ## Altres
-Si no s'ha pogut complir algun dels objectius, explicar quin ha sigut el motiu i que es faria si es diposes de mes temps per poder-ho resoldre.
-Quines millores es podrien aplicar si es disposes de mes temsps.
+Si no s'ha pogut complir algun dels objectius, explicar quin ha sigut el motiu i que es faria si es disposés de més temps per poder-ho resoldre. 
+Quines millores es podrien aplicar si es disposés de més temps.
 
  
 
