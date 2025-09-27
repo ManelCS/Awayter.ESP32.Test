@@ -16,5 +16,6 @@
         "type_traits": "cpp",
         "utility": "cpp"
     },
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "idf.portWin": "COM12"
 }
