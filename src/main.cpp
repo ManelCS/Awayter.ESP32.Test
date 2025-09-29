@@ -6,7 +6,7 @@
 #include <Preferences.h>
 #include <time.h>
 #include <vector>
-#include "WiFiAP.h"
+#include "WifiAP/WifiAP.h"
 
 // Activa o desactiva logs
 #define ENABLE_LOGS 1   // 1 = activats, 0 = desactivats
