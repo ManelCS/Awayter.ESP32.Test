@@ -10,7 +10,7 @@
 
 // Activa o desactiva logs
 #define ENABLE_LOGS 1   // 1 = activats, 0 = desactivats
-#define USE_AP_MODE  false  // true = AP mode , false = mode normal
+#define USE_AP_MODE  true // true = AP mode , false = mode normal
 
 #if ENABLE_LOGS
   #define LOG_PRINT(x)    Serial.print(x)
@@ -26,8 +26,8 @@ String ssid;
 String password;
 
 // Configuració del WiFi i MQTT
-const char* fixed_ssid =  "GOUFONE-22539B";
-const char* fixed_password = "20bellpuig20";
+const char* fixed_ssid =  "SSID";
+const char* fixed_password = "PASSWORD";
 const char *mqtt_server = "test.mosquitto.org";  // Broker públic
 const int mqtt_port = 1883;
 
@@ -45,7 +45,8 @@ bool updateScheduled = false;
 const char *ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 0;
 const int daylightOffset_sec = 0;
-// --------- CUA DE MISSATGES ----------
+
+// CUA DE MISSATGES
 struct DataMessage {
   String timestamp;
   float pressure;
@@ -54,6 +55,7 @@ struct DataMessage {
 };
 
 std::vector<DataMessage> messageQueue;   // cua de missatges pendents
+
 // --------- FUNCIONS ----------
 String getCurrentDateTimeUTC() {
   struct tm timeinfo;
@@ -121,7 +123,6 @@ void reconnectMQTT() {
     } else {
        LOG_PRINT("Error, rc=");
        LOG_PRINT(client.state());
-       LOG_PRINTLN(" intentem en 5s");
       delay(5000);
     }
   }
@@ -136,7 +137,7 @@ void reconnectWiFi() {
       delay(500);
       LOG_PRINT(".");
     }
-    LOG_PRINTLN("\niFi recuperat!");
+    LOG_PRINTLN("\nWiFi recuperat!");
   }
 }
 
@@ -187,11 +188,10 @@ void setup() {
   unsigned long startTime = millis();
 
   while (WiFi.status() != WL_CONNECTED) {
-    // delay(500);
-    //  LOG_PRINT(".");
+    delay(500);
+     LOG_PRINT(".");
     if (millis() - startTime > 10000) {
       resetWiFiCredentials(); 
-      // ESP.restart();
     }
   }
    LOG_PRINTLN("\nWiFi connectat!");

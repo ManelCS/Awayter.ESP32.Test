@@ -57,6 +57,7 @@ void startAPMode() {
   }
 }
 
+// Resetejar les credencials del wifi
 void resetWiFiCredentials() {
     preferences.begin("storage", false);
     preferences.remove("wifi_ssid");
