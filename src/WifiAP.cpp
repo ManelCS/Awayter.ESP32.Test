@@ -1,4 +1,5 @@
 #include "../include/WifiAP.h"
+#include "../include/log.h"
 
 // HTML formulari
 const char* htmlPage = R"rawliteral(
@@ -41,10 +42,10 @@ void handleSave() {
 
 // Arrancar AP mode
 void startAPMode() {
-  Serial.println("No hi ha WiFi configurat: Obrint AP mode");
+  LOG_PRINTLN("No hi ha WiFi configurat: Obrint AP mode");
   WiFi.softAP("ESP32_SETUP", "12345678");
-  Serial.print("Connecta't a la WiFi: ESP32_SETUP amb pass: 12345678\nIP: ");
-  Serial.println(WiFi.softAPIP());
+  LOG_PRINT("Connecta't a la WiFi: ESP32_SETUP amb pass: 12345678\nIP: ");
+  LOG_PRINTLN(WiFi.softAPIP());
 
   server.on("/", handleRoot);
   server.on("/save", HTTP_POST, handleSave);

@@ -9,18 +9,11 @@
 #include <vector>
 #include "../include/WifiAP.h"
 #include "../include/storage.h"
+#include "../include/log.h"
 
-// Activa o desactiva logs
-#define ENABLE_LOGS 1   // 1 = activats, 0 = desactivats
+// Mode Acces Point
 #define USE_AP_MODE  true // true = AP mode , false = mode normal
 
-#if ENABLE_LOGS
-  #define LOG_PRINT(x)    Serial.print(x)
-  #define LOG_PRINTLN(x)  Serial.println(x)
-#else
-  #define LOG_PRINT(x)
-  #define LOG_PRINTLN(x)
-#endif
 
 // --------- VARIABLES GLOBALS ----------
 Storage storage;
@@ -147,12 +140,12 @@ void enviarMissatge(const DataMessage &msg) {
 
 // --------- SETUP ----------
 void setup() {
+  esp_log_level_set("*", ESP_LOG_NONE);
   Serial.begin(115200);
-   storage.begin();  
+  storage.begin();  
   delay(1000);
   LOG_PRINTLN("Inici ESP32 MQTT Demo");
-
-  // storage.begin();
+  
   softVersion = storage.loadSoftVersion();
   if (storage.loadUpdateInfo(scheduledUpdHour, scheduledSoftVersion)) {
     updateScheduled = true;
@@ -167,12 +160,6 @@ void setup() {
     auto creds = storage.loadWiFiCredentials();
     ssid = creds.first;
     password = creds.second;
-    Serial.print("  SSID: ");
-    Serial.println(ssid);
-    Serial.print("  PASS: ");
-    Serial.println(password);
-
-    // ssid = ""; password = "";
     if(ssid=="" || password=="") startAPMode();
   } 
   else {
