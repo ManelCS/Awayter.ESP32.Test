@@ -1,7 +1,7 @@
 #include "../include/WifiAP.h"
 #include "../include/log.h"
 
-// HTML formulari
+// HTML
 const char* htmlPage = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -59,10 +59,8 @@ void startAPMode() {
 
 // Resetejar les credencials del wifi
 void resetWiFiCredentials() {
-    // preferences.begin("storage", false);
-    // preferences.remove("wifi_ssid");
-    // preferences.remove("wifi_pass");
-    // preferences.end();
     storage.clearWiFiCredentials();
     ESP.restart();
 }
+
+

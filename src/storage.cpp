@@ -21,10 +21,18 @@ void Storage::saveUpdateInfo(const String &hour, const String &version) {
 }
 
 bool Storage::loadUpdateInfo(String &hour, String &version) {
-    hour = preferences.getString("updHour", "");
-    version = preferences.getString("updSoftVersion", "");
-    return (hour != "" && version != "");
+
+    if (preferences.isKey("updHour") && preferences.isKey("updSoftVersion")) {
+        hour = preferences.getString("updHour", "");
+        version = preferences.getString("updSoftVersion", "");
+        return true;
+    } else {
+        hour = "";
+        version = "";
+        return false;
+    }
 }
+
 
 void Storage::clearUpdateInfo() {
     preferences.remove("updHour");
@@ -67,8 +75,11 @@ void Storage::saveQueuedMessages(const std::vector<DataMessage> &queue) {
 }
 
 void Storage::clearQueuedMessages() {
-    preferences.remove("messageQueue");
+    if (preferences.isKey("messageQueue")) {
+        preferences.remove("messageQueue");
+    }
 }
+
 
 
 std::vector<DataMessage> Storage::loadQueuedMessages() {
