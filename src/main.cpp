@@ -1,3 +1,4 @@
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <WiFi.h>
@@ -7,6 +8,7 @@
 #include <time.h>
 #include <vector>
 #include "WifiAP/WifiAP.h"
+#include"Storage/storage.h"
 
 // Activa o desactiva logs
 #define ENABLE_LOGS 1   // 1 = activats, 0 = desactivats
@@ -20,7 +22,94 @@
   #define LOG_PRINTLN(x)
 #endif
 
-Preferences preferences;
+// --------- ESTRUCTURES ----------
+// struct DataMessage {
+//   String timestamp;
+//   float pressure;
+//   float temperature;
+//   bool alarm;
+// };
+
+// --------- CLASSE STORAGE ----------
+// class Storage {
+// public:
+//   void begin() {
+//     prefs.begin("storage", false);
+//   }
+
+//   // SoftVersion
+//   void saveSoftVersion(const String &version) {
+//     prefs.putString("softVersion", version);
+//   }
+
+//   String loadSoftVersion() {
+//     return prefs.getString("softVersion", "1.0.0");
+//   }
+
+//   // Update info
+//   void saveUpdateInfo(const String &hour, const String &version) {
+//     prefs.putString("updHour", hour);
+//     prefs.putString("updSoftVersion", version);
+//   }
+
+//   bool loadUpdateInfo(String &hour, String &version) {
+//     hour = prefs.getString("updHour", "");
+//     version = prefs.getString("updSoftVersion", "");
+//     return (hour != "" && version != "");
+//   }
+
+//   void clearUpdateInfo() {
+//     prefs.remove("updHour");
+//     prefs.remove("updSoftVersion");
+//   }
+
+//   // Missatges pendents (guardem vector com JSON)
+//   void saveQueuedMessages(const std::vector<DataMessage>& queue) {
+//     DynamicJsonDocument doc(1024);
+//     JsonArray arr = doc.to<JsonArray>();
+//     for (auto &msg : queue) {
+//       JsonObject obj = arr.createNestedObject();
+//       obj["timestamp"] = msg.timestamp;
+//       obj["pressure"] = msg.pressure;
+//       obj["temperature"] = msg.temperature;
+//       obj["alarm"] = msg.alarm;
+//     }
+//     String json;
+//     serializeJson(doc, json);
+//     prefs.putString("queuedMsgs", json);
+//   }
+
+//   std::vector<DataMessage> loadQueuedMessages() {
+//     std::vector<DataMessage> queue;
+//     String json = prefs.getString("queuedMsgs", "[]");
+//     DynamicJsonDocument doc(1024);
+//     if (deserializeJson(doc, json) == DeserializationError::Ok) {
+//       for (JsonObject obj : doc.as<JsonArray>()) {
+//         DataMessage msg;
+//         msg.timestamp = obj["timestamp"].as<String>();
+//         msg.pressure = obj["pressure"];
+//         msg.temperature = obj["temperature"];
+//         msg.alarm = obj["alarm"];
+//         queue.push_back(msg);
+//       }
+//     }
+//     return queue;
+//   }
+
+//   void clearQueuedMessages() {
+//     prefs.remove("queuedMsgs");
+//   }
+
+// private:
+//   Preferences prefs;
+// };
+
+// --------- VARIABLES GLOBALS ----------
+Storage storage;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
 WebServer server(80);
 String ssid;
 String password;
@@ -31,30 +120,17 @@ const char* fixed_password = "PASSWORD";
 const char *mqtt_server = "test.mosquitto.org";  // Broker públic
 const int mqtt_port = 1883;
 
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-
-// Variables globals
 String softVersion = "1.0.0";
 String scheduledUpdHour = "";   // hora programada per actualitzar
 String scheduledSoftVersion = "";  // versió nova
 bool updateScheduled = false;
 
+std::vector<DataMessage> messageQueue;
+
 // Config NTP (hora UTC)
 const char *ntpServer = "pool.ntp.org";
 const long gmtOffset_sec = 0;
 const int daylightOffset_sec = 0;
-
-// CUA DE MISSATGES
-struct DataMessage {
-  String timestamp;
-  float pressure;
-  float temperature;
-  bool alarm;
-};
-
-std::vector<DataMessage> messageQueue;   // cua de missatges pendents
 
 // --------- FUNCIONS ----------
 String getCurrentDateTimeUTC() {
@@ -81,30 +157,27 @@ void callback(char *topic, byte *message, unsigned int length) {
   String msg;
   for (unsigned int i = 0; i < length; i++) msg += (char)message[i];
 
-   LOG_PRINT("Missatge rebut al topic ");
-   LOG_PRINT(topic);
-   LOG_PRINT(": ");
-   LOG_PRINTLN(msg);
+  LOG_PRINT("Missatge rebut al topic ");
+  LOG_PRINT(topic);
+  LOG_PRINT(": ");
+  LOG_PRINTLN(msg);
 
   if (String(topic) == "device/1885962/reboot") {
-     LOG_PRINTLN("Reboot remot rebut!");
+    LOG_PRINTLN("Reboot remot rebut!");
     delay(500);
     ESP.restart();
   }
 
   if (String(topic) == "device/1885962/update") {
     DynamicJsonDocument doc(512);
-    DeserializationError error = deserializeJson(doc, msg);
-    if (!error) {
+    if (!deserializeJson(doc, msg)) {
       scheduledUpdHour = doc["hour"].as<String>();
       scheduledSoftVersion = doc["softVersion"].as<String>();
       updateScheduled = true;
 
-      // Persistim a memòria
-      preferences.putString("updHour", scheduledUpdHour);
-      preferences.putString("updSoftVersion", scheduledSoftVersion);
+      storage.saveUpdateInfo(scheduledUpdHour, scheduledSoftVersion);
 
-       LOG_PRINTLN("UPDATE rebut i guardat!");
+      LOG_PRINTLN("UPDATE rebut i guardat!");
        LOG_PRINT("Hora programada: ");
        LOG_PRINTLN(scheduledUpdHour);
        LOG_PRINT("Nova versió: ");
@@ -115,13 +188,13 @@ void callback(char *topic, byte *message, unsigned int length) {
 
 void reconnectMQTT() {
   while (WiFi.status() == WL_CONNECTED && !client.connected()) {
-     LOG_PRINT("Intentant connexió MQTT...");
+    LOG_PRINT("Intentant connexió MQTT...");
     if (client.connect("ESP32Client1885962")) {
-       LOG_PRINTLN("connectat!");
+      LOG_PRINTLN("connectat!");
       client.subscribe("device/1885962/reboot");
       client.subscribe("device/1885962/update");
     } else {
-       LOG_PRINT("Error, rc=");
+       LOG_PRINTLN("Error, rc=");
        LOG_PRINT(client.state());
       delay(5000);
     }
@@ -157,32 +230,39 @@ void enviarMissatge(const DataMessage &msg) {
 // --------- SETUP ----------
 void setup() {
   Serial.begin(115200);
-  
+   storage.begin();  
   delay(1000);
-   LOG_PRINTLN("Inici ESP32 MQTT Demo");
-  
-  preferences.begin("storage", false);
-  softVersion = preferences.getString("softVersion", "1.0.0");
-  scheduledUpdHour = preferences.getString("updHour", "");
-  scheduledSoftVersion = preferences.getString("updSoftVersion", "");
-  if (scheduledUpdHour != "" && scheduledSoftVersion != "") {
+  LOG_PRINTLN("Inici ESP32 MQTT Demo");
+
+  // storage.begin();
+  softVersion = storage.loadSoftVersion();
+  if (storage.loadUpdateInfo(scheduledUpdHour, scheduledSoftVersion)) {
     updateScheduled = true;
   }
+  messageQueue = storage.loadQueuedMessages();
 
    LOG_PRINT("SoftVersion carregada: ");
    LOG_PRINTLN(softVersion);
 
 // ----- Selecció mode WiFi -----
-  if(USE_AP_MODE){
-    ssid = preferences.getString("wifi_ssid","");
-    password = preferences.getString("wifi_pass","");
-    if(ssid=="" || password=="") startAPMode(); // AP amb portal web
-  } else {
+  if (USE_AP_MODE) {
+    auto creds = storage.loadWiFiCredentials();
+    ssid = creds.first;
+    password = creds.second;
+    Serial.print("  SSID: ");
+    Serial.println(ssid);
+    Serial.print("  PASS: ");
+    Serial.println(password);
+
+    // ssid = ""; password = "";
+    if(ssid=="" || password=="") startAPMode();
+  } 
+  else {
     ssid = fixed_ssid;
     password = fixed_password;
   }
 
-  WiFi.begin(ssid.c_str(),password.c_str());
+  WiFi.begin(ssid.c_str(), password.c_str());
 
   LOG_PRINT("Connectant a WiFi");
   unsigned long startTime = millis();
@@ -190,11 +270,11 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
      LOG_PRINT(".");
-    if (millis() - startTime > 10000) {
+    if (millis() - startTime > 20000) {
       resetWiFiCredentials(); 
     }
   }
-   LOG_PRINTLN("\nWiFi connectat!");
+  LOG_PRINTLN("\nWiFi connectat!");
    LOG_PRINT("IP: ");
    LOG_PRINTLN(WiFi.localIP());
 
@@ -232,7 +312,7 @@ void loop() {
     String output;
     serializeJson(doc, output);
     client.publish("device/1885962/ping", output.c_str());
-     LOG_PRINTLN("PING enviat: " + output);
+    LOG_PRINTLN("PING enviat: " + output);
   }
 
   // Enviar dades cada 30s
@@ -249,6 +329,7 @@ void loop() {
       enviarMissatge(msg);
     } else {
       messageQueue.push_back(msg);
+      storage.saveQueuedMessages(messageQueue);
       LOG_PRINTLN("DATA desada a cua (sense connexió)");
     }
   }
@@ -260,18 +341,17 @@ void loop() {
     }
     LOG_PRINTLN("Tots els missatges pendents enviats!");
     messageQueue.clear();
+    storage.clearQueuedMessages();
   }
 
   // Comprovar UPDATE programat
   if (updateScheduled) {
     String currentHourMinute = getCurrentHourMinuteUTC();
-    
     if (currentHourMinute == scheduledUpdHour) {
-       LOG_PRINTLN("Executant UPDATE programat...");
+      LOG_PRINTLN("Executant UPDATE programat...");
       softVersion = scheduledSoftVersion;
-      preferences.putString("softVersion", softVersion);
-      preferences.remove("updHour");
-      preferences.remove("updSoftVersion");
+      storage.saveSoftVersion(softVersion);
+      storage.clearUpdateInfo();
       delay(500);
       ESP.restart();
     }

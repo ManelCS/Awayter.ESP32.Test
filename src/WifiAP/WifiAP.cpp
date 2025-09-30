@@ -29,8 +29,7 @@ void handleSave() {
     ssid = server.arg("ssid");
     password = server.arg("password");
 
-    preferences.putString("wifi_ssid", ssid);
-    preferences.putString("wifi_pass", password);
+    storage.saveWiFiCredentials(ssid, password);
 
     server.send(200, "text/html", "<h3>Credencials guardades! Reiniciant...</h3>");
     delay(2000);
@@ -59,10 +58,10 @@ void startAPMode() {
 
 // Resetejar les credencials del wifi
 void resetWiFiCredentials() {
-    preferences.begin("storage", false);
-    preferences.remove("wifi_ssid");
-    preferences.remove("wifi_pass");
-    preferences.end();
-    Serial.println("Credencials WiFi resetejades!");
+    // preferences.begin("storage", false);
+    // preferences.remove("wifi_ssid");
+    // preferences.remove("wifi_pass");
+    // preferences.end();
+    storage.clearWiFiCredentials();
     ESP.restart();
 }
